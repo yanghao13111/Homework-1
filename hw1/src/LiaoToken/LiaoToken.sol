@@ -16,12 +16,16 @@ interface IERC20 {
 contract LiaoToken is IERC20 {
     // TODO: you might need to declare several state variable here
     mapping(address account => uint256) private _balances;
+    mapping(address => mapping(address => uint256)) private _allowances;
     mapping(address account => bool) isClaim;
 
     uint256 private _totalSupply;
-
     string private _name;
     string private _symbol;
+
+    error InsufficientBalance(uint256 available, uint256 required);
+    error ZeroAddressNotAllowed();
+    error InsufficientAllowance(uint256 available, uint256 required);
 
     event Claim(address indexed user, uint256 indexed amount);
 
@@ -60,17 +64,49 @@ contract LiaoToken is IERC20 {
 
     function transfer(address to, uint256 amount) external returns (bool) {
         // TODO: please add your implementaiton here
+        _transfer(msg.sender, to, amount);
+        return true;
     }
 
     function transferFrom(address from, address to, uint256 value) external returns (bool) {
         // TODO: please add your implementaiton here
+        _spendAllowance(from, msg.sender, value);
+        _transfer(from, to, value);
+        return true;
     }
 
     function approve(address spender, uint256 amount) external returns (bool) {
         // TODO: please add your implementaiton here
+        _approve(msg.sender, spender, amount);
+        return true;
     }
 
     function allowance(address owner, address spender) public view returns (uint256) {
         // TODO: please add your implementaiton here
+        return _allowances[owner][spender];
+    }
+
+    // Private helper functions
+    function _transfer(address from, address to, uint256 amount) private {
+        if (from == address(0) || to == address(0)) revert ZeroAddressNotAllowed();
+        if (_balances[from] < amount) revert InsufficientBalance(_balances[from], amount);
+
+        _balances[from] -= amount;
+        _balances[to] += amount;
+        emit Transfer(from, to, amount);
+    }
+
+    function _approve(address owner, address spender, uint256 amount) private {
+        if (owner == address(0) || spender == address(0)) revert ZeroAddressNotAllowed();
+
+        _allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
+    }
+
+    function _spendAllowance(address owner, address spender, uint256 amount) private {
+        uint256 currentAllowance = _allowances[owner][spender];
+        if (currentAllowance < amount) revert InsufficientAllowance(currentAllowance, amount);
+
+        _approve(owner, spender, currentAllowance - amount);
     }
 }
