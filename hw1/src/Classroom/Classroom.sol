@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+import {console} from "forge-std/Test.sol";
 
 /* Problem 1 Interface & Contract */
 contract StudentV1 {
